@@ -14,13 +14,13 @@ spec:
                 - Pod
       verifyImages:
         - imageReferences:
-            - "ghcr.io/paolomainardi*"
+            - "ghcr.io/andypanix*"
           attestations:
             - predicateType: https://cyclonedx.org/schema
               attestors:
                 - entries:
                     - keyless:
-                        subject: "paolo.mainardi@sparkfabrik.com"
+                        subject: "andrea.panisson@sparkfabrik.com"
                         issuer: "https://github.com/login/oauth"
                         rekor:
                           url: https://rekor.sigstore.dev

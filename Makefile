@@ -19,8 +19,7 @@ run: docker-build ## Build the image and run it.
 	docker run -d --name nyancat -p 8080:80 $(REGISTRY):$(DOCKER_TAG)
 
 docker-build: ## Build and push the image.
-	@echo "Building and pushing: $(REGISTRY):$(DOCKER_TAG)"
-	@echo -e ""
+	@echo -n "Building and pushing: $(REGISTRY):$(DOCKER_TAG)\n\n"
 	@docker build -t $(REGISTRY):$(DOCKER_TAG) .
 	docker push $(REGISTRY):$(DOCKER_TAG)
 
@@ -45,6 +44,9 @@ cosign-3: ## Verify the image.
 
 cosign-4: ## See the signature.
 	cosign verify $(REGISTRY):@$(shell crane digest $(REGISTRY):$(DOCKER_TAG)) | jless
+
+sign-verify:
+	cosign verify --certificate-identity=andrea.panisson@sparkfabrik.com --certificate-oidc-issuer="https://github.com/login/oauth" $(IMAGE):1.0.0 | jless
 
 ##@ SBOM
 sbom-1: ## Generate SBOM.
@@ -79,6 +81,8 @@ k8s-0: ## Create a kind cluster
 k8s-1: ## Install kyverno.
 	@kubectl create -f https://github.com/kyverno/kyverno/releases/download/v1.8.5/install.yaml || true
 
+k8s-apply-policies: k8s-2 k8s-8
+
 k8s-2: ## Apply kyverno policy.
 	kubectl apply -f k8s/kyverno/policy-check-signature.yaml
 
@@ -91,15 +95,15 @@ k8s-4: ## Port forward to nyancat.
 	kubectl port-forward svc/nyancat 8080:80 &
 
 k8s-5: ## Change the dockerfile and push a new tag without signature.
-	sed -i 's/IDI2023/PHPDAY/g' src/index.html
-	docker build -t $(REGISTRY):1.1.0 .
-	docker push $(REGISTRY):1.1.0
+	sed -i 's/KCD2023/PHPDAY/g' src/index.html
+	docker build -t $(REGISTRY):1.0.0 .
+	docker push $(REGISTRY):1.0.0
 
 k8s-6: ## Scan the registry to see pushed tags, but no signature.
 	crane ls $(REGISTRY)
 
-k8s-7: ## Sign release 1.1.0
-	cosign sign "$(REGISTRY)":@$(shell crane digest $(REGISTRY):1.1.0)
+k8s-7: ## Sign release 1.0.0
+	cosign sign "$(REGISTRY)":@$(shell crane digest $(REGISTRY):1.0.0)
 
 k8s-8: ## Deploy a kyverno policy to enforce sbom attestation.
 	kubectl apply -f k8s/kyverno/policy-check-sbom.yaml

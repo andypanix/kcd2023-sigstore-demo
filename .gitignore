@@ -1,2 +1,4 @@
 sbom-verify-attestation.json
 sbom-cyclonedx.json
+.idea
+sbom.json
